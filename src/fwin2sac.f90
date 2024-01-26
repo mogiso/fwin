@@ -115,7 +115,7 @@ program fwin2sac
         ichid = win__ach2ich(chid(i))
         do j=1, size(ch_tbl)
           if( ichid == ch_tbl(j)%ichid ) then
-            ch_tbl(j)%conv = ch_tbl(j)%conv * 1d9
+            ch_tbl(j)%conv = ch_tbl(j)%conv * 1.0_real64
             ch = [ch, ch_tbl(j)]
             exit
           end if
@@ -166,8 +166,8 @@ program fwin2sac
       sh%delta = 1/dble(sfreq(i))
       sh%e = (sh%npts - 1) * sh%delta
 
-      fn_sac = trim(dn) // '/' // ymd // '__' // hms // '__' // clen // '__' // &
-               trim(sh%kstnm) // '__' // trim(adjustl(sh%kcmpnm)) // '__.sac'
+      fn_sac = trim(dn) // '/' // ymd // '.' // hms // '.' // &
+               trim(sh%kstnm) // '.' // trim(adjustl(sh%kcmpnm)) // '.sac'
 
       if(sum(npts(:,i))>0) then
         call sac__write(fn_sac, sh, dat(:,i)*ch(i)%conv, .true.)
@@ -196,7 +196,8 @@ program fwin2sac
     
     sh%stla  =   ch%lat 
     sh%stlo  =   ch%lon 
-    sh%stdp  = - ch%elev 
+    !sh%stdp  = - ch%elev / 1000.0_real64
+    sh%stdp = -12345.0_real64
     sh%stel  =   ch%elev  
     if( len_trim( ch%stnm ) <= 8 ) then
       sh%kstnm = trim(ch%stnm)
@@ -238,6 +239,8 @@ program fwin2sac
       case default
         sh%idep = 5
     end select
+    sh%kuser0 = ch%unit(1 : 4)
+    sh%kuser1 = ch%unit(5 : 8)
   
   end subroutine ch2sh
   
