@@ -26,19 +26,31 @@ program fwin2sac
   !--
   block
     integer :: io, ierr, i
-    character(256) ::  fn_winlst
-    logical :: is_opt
+    character(256) ::  fn_winlst, fn_winfile
+    logical :: is_opt, is_winfile
 
     call getopt('l', is_opt, fn_winlst)
-    if(.not. is_opt) call usage_stop()
-    open(newunit=io, file=fn_winlst, iostat=ierr, action='read', status='old')
-    if( ierr /= 0 ) error stop 'file not found: ' // trim(fn_winlst)
-    call util__countline(io, nwin)
-    allocate( fn_win(nwin) )
-    do i=1, nwin
-      read(io, '(A)') fn_win(i)
-    end do
-    close(io)
+    call getopt('f', is_winfile, fn_winfile)
+    if(.not. is_opt .and. .not. is_winfile) call usage_stop()
+
+    if(is_winfile) then
+      nwin = 1
+      allocate(fn_win(nwin))
+      fn_win(1) = fn_winfile
+    else
+      if(is_opt) then
+        open(newunit=io, file=fn_winlst, iostat=ierr, action='read', status='old')
+        if( ierr /= 0 ) error stop 'file not found: ' // trim(fn_winlst)
+        call util__countline(io, nwin)
+        allocate( fn_win(nwin) )
+        do i=1, nwin
+          read(io, '(A)') fn_win(i)
+        end do
+        close(io)
+      else
+        call usage_stop()
+      endif
+    endif
 
     call getopt('d', is_opt, dn, '.')
   end block
@@ -180,7 +192,7 @@ program fwin2sac
   subroutine usage_stop()
 
     character(18) :: sp1 = '                  '
-    write(error_unit,'(A)') 'usage: fwin2sac.x <-l listfile> '
+    write(error_unit,'(A)') 'usage: fwin2sac.x <-l listfile> or <-f winfile>'
     write(error_unit,'(A)') sp1//'[-t chtbl] [-c chids|chlist|all] [-s stnms|stlist|all] [-p cmpnm|cmplist|all]'
     stop
   end subroutine usage_stop
@@ -239,8 +251,6 @@ program fwin2sac
       case default
         sh%idep = 5
     end select
-    sh%kuser0 = ch%unit(1 : 4)
-    sh%kuser1 = ch%unit(5 : 8)
   
   end subroutine ch2sh
   
